@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Workflow Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .example-emails {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .example-emails h3 {
+            color: #667eea;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+
+        .example-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #5568d3;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 10px;
+            animation: slideIn 0.4s ease;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result h2 {
+            color: #155724;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .result.error h2 {
+            color: #721c24;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .data-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .data-item label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .data-item .value {
+            font-size: 1.1em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .urgency-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .urgency-high {
+            background: #ff4757;
+            color: white;
+        }
+
+        .urgency-medium {
+            background: #ffa502;
+            color: white;
+        }
+
+        .urgency-low {
+            background: #2ed573;
+            color: white;
+        }
+
+        .summary-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .summary-box label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .summary-box .value {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .sheet-link {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .sheet-link:hover {
+            background: #5568d3;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Intelligent Workflow Assistant</h1>
+            <p>AI-Powered Customer Support Email Processing</p>
+            <div class="mode-badge">{{ mode }}</div>
+        </div>
+
+        <form id="emailForm">
+            <div class="form-group">
+                <label for="email_content">Customer Support Email</label>
+                <textarea 
+                    id="email_content" 
+                    name="email_content" 
+                    placeholder="Paste or type a customer support email here..."
+                    required
+                ></textarea>
+            </div>
+
+            <div class="example-emails">
+                <h3>Quick Examples:</h3>
+                <button type="button" class="example-btn" onclick="loadExample1()">Urgent Bug Report</button>
+                <button type="button" class="example-btn" onclick="loadExample2()">Feature Request</button>
+                <button type="button" class="example-btn" onclick="loadExample3()">Billing Question</button>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Process Email with AI
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing email with AI...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+
+        <div class="footer">
+            <p>Built with OpenAI GPT, Google Sheets API & Flask | AI Adventurer Quest</p>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            1: `Subject: URGENT: Production Down - Users Can't Login
+
+Hi Support Team,
+
+This is Sarah Chen from Acme Corp. We're experiencing a critical issue right now - none of our users can log into the system. We've tried from multiple devices and browsers, all getting "Invalid credentials" errors even with correct passwords.
+
+This is affecting our entire sales team (50+ users) and we have a major client demo in 2 hours. We need immediate assistance!
+
+Our account ID is: ACME-12345
+
+Please help ASAP!
+
+Best regards,
+Sarah Chen
+IT Manager, Acme Corp
+sarah.chen@acmecorp.com`,
+
+            2: `Subject: Feature Request - Export to CSV
+
+Hello,
+
+My name is Michael Rodriguez and I've been using your platform for about 6 months now. Overall, I'm really happy with it!
+
+I wanted to suggest a feature that would be incredibly helpful for our workflow: the ability to export our reports to CSV format. Currently, we can only export to PDF, but we often need to manipulate the data in Excel.
+
+This isn't urgent, but it would definitely save us a lot of time. Several of my colleagues have mentioned they'd find this useful too.
+
+Thanks for considering this!
+
+Best,
+Michael Rodriguez
+Data Analyst
+michael.r@techstartup.io`,
+
+            3: `Subject: Question about my invoice
+
+Hi there,
+
+I'm Jane Williams and I just received my monthly invoice (Invoice #INV-2024-789). I noticed I was charged $149 instead of the usual $99. 
+
+Could you please help me understand what the extra charge is for? I don't recall upgrading my plan or adding any additional features.
+
+Thanks for your help!
+
+Jane Williams
+jane.williams@consulting.com`
+        };
+
+        function loadExample1() {
+            document.getElementById('email_content').value = examples[1];
+        }
+
+        function loadExample2() {
+            document.getElementById('email_content').value = examples[2];
+        }
+
+        function loadExample3() {
+            document.getElementById('email_content').value = examples[3];
+        }
+
+        document.getElementById('emailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const emailContent = document.getElementById('email_content').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+
+            // Show loading
+            submitBtn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email_content: emailContent })
+                });
+
+                const data = await response.json();
+
+                // Hide loading
+                loading.classList.remove('active');
+                submitBtn.disabled = false;
+
+                // Show result
+                result.classList.add('active');
+
+                if (data.success) {
+                    result.className = 'result active success';
+                    const extracted = data.extracted_data;
+                    const task = data.task_created;
+
+                    result.innerHTML = `
+                        <h2>✅ Email Processed Successfully!</h2>
+                        
+                        <div class="summary-box">
+                            <label>AI-Generated Summary</label>
+                            <div class="value">${extracted.summary}</div>
+                        </div>
+
+                        <div class="data-grid">
+                            <div class="data-item">
+                                <label>Customer Name</label>
+                                <div class="value">${extracted.customer_name}</div>
+                            </div>
+                            <div class="data-item">
+                                <label>Topic</label>
+                                <div class="value">${extracted.topic}</div>
+                            </div>
+                            <div class="data-item" style="grid-column: 1 / -1;">
+                                <label>Urgency Level</label>
+                                <div class="value">
+                                    <span class="urgency-badge urgency-${extracted.urgency}">
+                                        ${extracted.urgency.toUpperCase()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-box">
+                            <label>Task Created</label>
+                            <div class="value">
+                                ${task.message} (Row #${task.row_number})
+                                <br>
+                                <a href="${task.sheet_url}" target="_blank" class="sheet-link">
+                                    📊 View in Google Sheets
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    result.className = 'result active error';
+                    result.innerHTML = `
+                        <h2>❌ Processing Failed</h2>
+                        <p><strong>Error:</strong> ${data.error}</p>
+                    `;
+                }
+            } catch (error) {
+                loading.classList.remove('active');
+                submitBtn.disabled = false;
+                result.classList.add('active');
+                result.className = 'result active error';
+                result.innerHTML = `
+                    <h2>❌ Connection Error</h2>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
