@@ -1,0 +1,393 @@
+{
+  "name": "Intelligent Workflow Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "process-email",
+        "options": {}
+      },
+      "id": "d1e2a259-31ff-4897-adc9-dfb78b019d50",
+      "name": "Webhook - Email Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        272
+      ],
+      "webhookId": "email-processor"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "raw_response",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ee3f0d7f-486c-4845-a3a6-f66256a33c63",
+      "name": "Extract AI Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        768,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Clean and parse the AI response\nlet content = items[0].json.raw_response;\n\n// Remove markdown code blocks if present\nif (content.startsWith('```json')) {\n  content = content.substring(7);\n}\nif (content.startsWith('```')) {\n  content = content.substring(3);\n}\nif (content.endsWith('```')) {\n  content = content.substring(0, content.length - 3);\n}\ncontent = content.trim();\n\n// Parse JSON\ntry {\n  const extracted = JSON.parse(content);\n  \n  // Validate and normalize\n  const result = {\n    summary: extracted.summary || 'No summary available',\n    customer_name: extracted.customer_name || 'Unknown',\n    topic: extracted.topic || 'General Inquiry',\n    urgency: (extracted.urgency || 'medium').toLowerCase()\n  };\n  \n  // Ensure urgency is valid\n  if (!['high', 'medium', 'low'].includes(result.urgency)) {\n    result.urgency = 'medium';\n  }\n  \n  // Add original email\n  result.original_email = $input.first().json.email_content;\n  \n  return [result];\n  \n} catch (error) {\n  // Fallback if parsing fails\n  return [{\n    summary: 'Error processing email - manual review required',\n    customer_name: 'Unknown',\n    topic: 'Error',\n    urgency: 'medium',\n    original_email: $input.first().json.email_content,\n    error: error.message\n  }];\n}"
+      },
+      "id": "6dc88605-3e9e-48b7-981c-931cf5b2d030",
+      "name": "Parse JSON Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        992,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "159IXjmQ8VU0CbLdI6Znvemgf6kMDP6U2gqP6u6IPSs4",
+          "mode": "list",
+          "cachedResultName": "Support_Team",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/159IXjmQ8VU0CbLdI6Znvemgf6kMDP6U2gqP6u6IPSs4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/159IXjmQ8VU0CbLdI6Znvemgf6kMDP6U2gqP6u6IPSs4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer_Name": "={{ $json.customer_name }}",
+            "Topic": "={{ $json.topic }}",
+            "Urgency": "={{ $json.urgency }}",
+            "Summarized_text": "={{ $json.summary }}",
+            "Gmail_content": "={{ $('Get row(s) in sheet').item.json.Gmail_content }}"
+          },
+          "matchingColumns": [
+            "Gmail_content"
+          ],
+          "schema": [
+            {
+              "id": "Gmail_content",
+              "displayName": "Gmail_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summarized_text",
+              "displayName": "Summarized_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "7fb3cd46-135a-495d-93e6-38959a0e647d",
+      "name": "Google Sheets - Log Task",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1216,
+        272
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "NzurPBcNhY3awyQC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"message\": \"Email processed successfully!\",\n  \"extracted_data\": {\n    \"summary\": $json.summary,\n    \"customer_name\": $json.customer_name,\n    \"topic\": $json.topic,\n    \"urgency\": $json.urgency\n  },\n  \"task_created\": {\n    \"success\": true,\n    \"message\": \"Task logged to Google Sheets\",\n    \"timestamp\": $now.format('yyyy-MM-dd HH:mm:ss')\n  }\n} }}",
+        "options": {}
+      },
+      "id": "722a7b95-5df8-4646-8cab-2ea3e1f91c50",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Gmail_content }}\n",
+        "options": {
+          "systemMessage": "=You are an AI assistant helping a customer support team. \nAnalyze the following email and extract key information from them.\n\nPlease respond with ONLY a JSON object in this exact format:\n{\n  \"summary\": \"A brief 1-2 sentence summary of the email\",\n  \"customer_name\": \"The customer's name (or 'Unknown' if not found)\",\n  \"topic\": \"The main topic/category (e.g., Technical Issue, Billing, Feature Request)\",\n  \"urgency\": \"high, medium, or low based on the email content\"\n}\n\nDo not include any other text, just the JSON object with exact format, not include any type of extra text in it except the formated columns from the format."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        416,
+        272
+      ],
+      "id": "700896fd-2132-4c7f-830c-c46944af2080",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        496,
+        496
+      ],
+      "id": "e0e080ab-df3b-4d53-bf5f-aaf7cd076149",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "JqBYejv8PxleubAR",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "159IXjmQ8VU0CbLdI6Znvemgf6kMDP6U2gqP6u6IPSs4",
+          "mode": "list",
+          "cachedResultName": "Support_Team",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/159IXjmQ8VU0CbLdI6Znvemgf6kMDP6U2gqP6u6IPSs4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/159IXjmQ8VU0CbLdI6Znvemgf6kMDP6U2gqP6u6IPSs4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -32,
+        272
+      ],
+      "id": "9ab17a6e-7d94-4da4-88b5-15b12f882c73",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "NzurPBcNhY3awyQC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        272
+      ],
+      "id": "7be232d5-0e8d-42a5-83b4-40f79a504ba2",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        192,
+        272
+      ],
+      "id": "8059e40e-1fa0-4901-81da-7ffdb1f084c8",
+      "name": "Loop Over Items"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Email Input": {
+      "main": [
+        []
+      ]
+    },
+    "Extract AI Response": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON Response": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Log Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Log Task": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9f3467d0-55c3-492c-9039-64bdc8211949",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c9d06716fa9f8dc5dd506f159d4e1a8162b41aebea5eb43caa390e15fe5b55c5"
+  },
+  "id": "xXOY2rF739SW64r0",
+  "tags": []
+}
